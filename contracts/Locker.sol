@@ -23,12 +23,14 @@ contract Locker is ReentrancyGuard, BIT {
     uint public totalLockedAmount;
     uint public rewardRate;
     uint public blockPeriod;
-    uint public startStage;
     uint public boostDivider;
     uint public boostMultiplier;
+    uint public startBlock;
+    uint public passedStage;
 
     IVanilla public vanilla;
 
+    event NewBlockPeriod(uint newBlockPeriod);
     event NewBoostDivider(uint newBoostDivider);
     event NewBoostMultiplier(uint newBoostMultiplier);
     event Locked(address indexed account, uint unlockStage, uint amount);
@@ -48,12 +50,28 @@ contract Locker is ReentrancyGuard, BIT {
         uint newBoostMultiplier
     ) {
         require(newVanilla != address(0), "Vanilla: zero address");
+        require(newBlockPeriod > 0, "Vanilla: wrong block period");
         vanilla = IVanilla(newVanilla);
         blockPeriod = newBlockPeriod;
-        startStage = block.number / newBlockPeriod;
 
         boostDivider = newBoostDivider;
         boostMultiplier = newBoostMultiplier;
+
+        startBlock = block.number;
+        passedStage = 0;
+    }
+
+    function setBlockPeriod(uint newBlockPeriod) external {
+        require(msg.sender == vanilla.admin(), "Vanilla: admin");
+        require(newBlockPeriod > 0, "Vanilla: wrong block period");
+
+        uint currentStage = blockNumberToStage(block.number);
+        startBlock = block.number;
+        passedStage = currentStage;
+
+        blockPeriod = newBlockPeriod;
+
+        emit NewBlockPeriod(newBlockPeriod);
     }
 
     function setBoostDivider(uint newBoostDivider) external {
@@ -239,8 +257,8 @@ contract Locker is ReentrancyGuard, BIT {
     }
 
     function blockNumberToStage(uint blockNumber) public view returns (uint16) {
-        return blockNumber / blockPeriod < startStage
-            ? 0
-            : uint16(blockNumber / blockPeriod - startStage);
+        return blockNumber < startBlock
+            ? uint16(passedStage)
+            : uint16((blockNumber - startBlock) / blockPeriod + passedStage);
     }
 }

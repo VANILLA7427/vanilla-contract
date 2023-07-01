@@ -36,6 +36,7 @@ contract Distributor is ReentrancyGuard {
 
     mapping (address => mapping (uint => AccountState)) public accountStates;
 
+    event NewTokenPerBlock(uint tokenPerBlock);
     event NewRewardPool(
         uint indexed poolIdx,
         address rewardPool,
@@ -76,6 +77,15 @@ contract Distributor is ReentrancyGuard {
         weth = wethAddress;
         startBlock = newStartBlock;
         tokenPerBlock = newTokenPerBlock;
+    }
+
+    function setTokenPerBlock(uint newTokenPerBlock) external {
+        require(msg.sender == vanilla.admin(), "Vanilla: admin");
+        for (uint i = 0; i < rewardPoolStates.length; i++) {
+            update(i);
+        }
+        tokenPerBlock = newTokenPerBlock;
+        emit NewTokenPerBlock(tokenPerBlock);
     }
 
     function addRewardPool(address depositToken, uint64 rewardWeight) external {
