@@ -136,7 +136,7 @@ contract Locker is ReentrancyGuard, BIT {
         uint112 amount,
         uint beforeUnlockBlock,
         uint afterUnlockBlock
-    ) external {
+    ) external nonReentrant {
         uint16 currentStage = blockNumberToStage(block.number);
         uint16 beforeUnlockStage = blockNumberToStage(beforeUnlockBlock);
         uint16 afterUnlockStage = blockNumberToStage(afterUnlockBlock);
