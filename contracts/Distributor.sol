@@ -145,7 +145,7 @@ contract Distributor is ReentrancyGuard {
         }
 
         uint reward = rewardRate * accountState.deposit / 1e18 - accountState.rewardDebt;
-        return ILocker(vanilla.locker()).getBoostedAmount(msg.sender, reward);
+        return ILocker(vanilla.locker()).getBoostedAmount(account, reward);
     }
 
     function deposit(uint poolIdx, uint112 amount) external payable nonReentrant {
