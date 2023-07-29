@@ -28,7 +28,7 @@ contract Reinforcer is VRFV2WrapperConsumerBase, ReentrancyGuard, IERC721Receive
 
     uint32 public immutable callbackGasLimit;
     uint16 public immutable requestConfirmations;
-    uint32 public immutable numWords;
+    uint32 public constant numWords = 1;
     address public immutable wrapperAddress;
     address public immutable link;
     bool public canReinforce;
@@ -68,8 +68,7 @@ contract Reinforcer is VRFV2WrapperConsumerBase, ReentrancyGuard, IERC721Receive
         address newLink,
         address newWrapperAddress,
         uint32 newCallbackGasLimit,
-        uint16 newRequestConfirmations,
-        uint32 newNumWords
+        uint16 newRequestConfirmations
     ) VRFV2WrapperConsumerBase(newLink, newWrapperAddress) {
         require(
             newVanilla != address(0) && newLink != address(0) && newWrapperAddress != address(0),
@@ -81,7 +80,6 @@ contract Reinforcer is VRFV2WrapperConsumerBase, ReentrancyGuard, IERC721Receive
         wrapperAddress = newWrapperAddress;
         callbackGasLimit = newCallbackGasLimit;
         requestConfirmations = newRequestConfirmations;
-        numWords = newNumWords;
 
         canReinforce = true;
     }
