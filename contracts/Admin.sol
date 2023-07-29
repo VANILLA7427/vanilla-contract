@@ -53,8 +53,8 @@ contract Admin {
     function submitTransaction(
         address to,
         uint value,
-        string memory signature,
-        bytes memory data
+        string calldata signature,
+        bytes calldata data
     ) public {
         require(isAdmin[msg.sender], "Vanilla: not admin");
 
