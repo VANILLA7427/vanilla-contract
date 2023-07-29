@@ -26,7 +26,6 @@ contract Distributor is ReentrancyGuard {
     address public weth;
     IVanilla public vanilla;
 
-    uint public blocksPerYear;
     uint public startBlock;
     uint public totalRewardWeight;
 
@@ -279,11 +278,6 @@ contract Distributor is ReentrancyGuard {
             rewardWeights[i] = poolState.rewardWeight;
         }
         return (depositTokens, totalDeposits, rewardWeights);
-    }
-
-    function safe112(uint n) internal pure returns (uint112) {
-        require(n < 2**112, "Vanilla: 112");
-        return uint112(n);
     }
 
     function safe144(uint n) internal pure returns (uint144) {

@@ -5,7 +5,6 @@ import "./interfaces/IERC20.sol";
 import "./interfaces/IERC721.sol";
 import "./libraries/SafeERC20.sol";
 import "./interfaces/IVanilla.sol";
-import "./interfaces/ILocker.sol";
 import "./libraries/ReentrancyGuard.sol";
 import "./interfaces/IERC721Receiver.sol";
 
@@ -18,14 +17,12 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
         address beneficiary;
         address highestBidder;
         uint32 endBlock;
-        bool isLockBid;
         bool highestBidderClaimed;
         bool beneficiaryClaimed;
         uint112 highestBidAmount;
     }
 
     uint public feePercentage;
-    uint public lockBidMinimumWeight;
 
     IVanilla public vanilla;
 
@@ -33,20 +30,17 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
     AuctionState[] public auctionStates;
 
     event NewFeePercentage(uint newFeePercentage);
-    event NewLockBidMinimumWeight(uint newLockBidMinimumWeight);
     event NewAuction(
         address indexed nft,
         uint indexed tokenId,
         uint indexed auctionId,
         address beneficiary,
         uint endBlock,
-        uint minimumBidAmount,
-        bool isLockBid
+        uint minimumBidAmount
     );
     event Bid(
         uint indexed auctionId,
         address indexed bidder,
-        bool indexed isLockBid,
         uint highestBidAmount,
         uint transferredAmount
     );
@@ -68,14 +62,12 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
 
     constructor (
         address newVanilla,
-        uint newFeePercentage,
-        uint newLockBidMinimumWeight
+        uint newFeePercentage
     ) {
         require(newVanilla != address(0), "Vanilla: zero address");
         vanilla = IVanilla(newVanilla);
 
         feePercentage = newFeePercentage;
-        lockBidMinimumWeight = newLockBidMinimumWeight;
     }
 
     function setFeePercentage(uint newFeePercentage) external {
@@ -85,20 +77,12 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
         emit NewFeePercentage(feePercentage);
     }
 
-    function setLockBidMinimumWeight(uint newLockBidMinimumWeight) external {
-        require(msg.sender == vanilla.admin(), "Vanilla: admin");
-        lockBidMinimumWeight = newLockBidMinimumWeight;
-
-        emit NewLockBidMinimumWeight(lockBidMinimumWeight);
-    }
-
     function createAuction(
         address nft,
         uint tokenId,
         address beneficiary,
         uint32 endBlock,
-        uint112 minimumBidAmount,
-        bool isLockBid
+        uint112 minimumBidAmount
     ) external nonReentrant {
         require(vanilla.allowed721(nft), "Vanilla: not allowed");
         require(endBlock > block.number, "Vanilla: end block");
@@ -114,7 +98,6 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
                 beneficiary,
                 address(0),
                 endBlock,
-                isLockBid,
                 false,
                 false,
                 minimumBidAmount
@@ -127,15 +110,13 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
             auctionStates.length - 1,
             beneficiary,
             endBlock,
-            minimumBidAmount,
-            isLockBid
+            minimumBidAmount
         );
     }
 
     function bid(uint auctionId, uint112 bidAmount) external nonReentrant {
         AuctionState storage auctionState = auctionStates[auctionId];
         IERC20 iVanilla = IERC20(address(vanilla));
-        require(!auctionState.isLockBid, "Vanilla: lock bid");
         require(block.number < auctionState.endBlock, "Vanilla: over");
         require(auctionState.highestBidAmount < bidAmount, "Vanilla: bid amount");
 
@@ -150,53 +131,13 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
         emit Bid(
             auctionId,
             msg.sender,
-            false,
             bidAmount,
             transferAmount
         );
     }
 
-    function lockBid(
-        uint auctionId,
-        uint112 bidAmount,
-        uint endBlock
-    ) external nonReentrant {
-        AuctionState storage auctionState = auctionStates[auctionId];
-        IERC20 iVanilla = IERC20(address(vanilla));
-        require(auctionState.isLockBid, "Vanilla: not lock bid");
-        require(block.number < auctionState.endBlock, "Vanilla: over");
-
-        iVanilla.safeTransferFrom(msg.sender, address(this), bidAmount);
-
-        uint112 newBidAmount;
-        {
-            address locker = vanilla.locker();
-            ILocker iLocker = ILocker(locker);
-            require(iLocker.getWeight(msg.sender) > lockBidMinimumWeight, "Vanilla: weight");
-
-            iVanilla.safeApprove(locker, bidAmount);
-            newBidAmount = safe112(iLocker.lock(msg.sender, endBlock, bidAmount));
-        }
-
-        require(auctionState.highestBidAmount < newBidAmount, "Vanilla: bid amount");
-
-        bidAmounts[msg.sender][auctionId] = newBidAmount;
-
-        auctionState.highestBidAmount = newBidAmount;
-        auctionState.highestBidder = msg.sender;
-
-        emit Bid(
-            auctionId,
-            msg.sender,
-            true,
-            newBidAmount,
-            bidAmount
-        );
-    }
-
     function refund(uint auctionId) external nonReentrant {
         AuctionState storage auctionState = auctionStates[auctionId];
-        require(!auctionState.isLockBid, "Vanilla: lock bid");
         require(msg.sender != auctionState.highestBidder, "Vanilla: highest bidder");
         uint amount = bidAmounts[msg.sender][auctionId];
         delete bidAmounts[msg.sender][auctionId];
@@ -209,7 +150,6 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
     function claimBeneficiary(uint auctionId) external nonReentrant {
         AuctionState storage auctionState = auctionStates[auctionId];
         require(msg.sender == auctionState.beneficiary, "Vanilla: beneficiary");
-        require(!auctionState.isLockBid, "Vanilla: lock bid");
         require(block.number >= auctionState.endBlock, "Vanilla: not over");
         require(!auctionState.beneficiaryClaimed, "Vanilla: claimed");
         auctionState.beneficiaryClaimed = true;
@@ -247,7 +187,6 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
     function claimHighestBidder(uint auctionId) external nonReentrant {
         AuctionState storage auctionState = auctionStates[auctionId];
         require(msg.sender == auctionState.highestBidder, "Vanilla: highest bidder");
-        require(!auctionState.isLockBid, "Vanilla: lock bid");
         require(block.number >= auctionState.endBlock, "Vanilla: not over");
         require(!auctionState.highestBidderClaimed, "Vanilla: claimed");
         auctionState.highestBidderClaimed = true;
@@ -263,31 +202,6 @@ contract Auction is ReentrancyGuard, IERC721Receiver {
             auctionState.nft,
             auctionState.tokenId,
             msg.sender
-        );
-    }
-
-    function claimLockBid(uint auctionId) external nonReentrant {
-        AuctionState storage auctionState = auctionStates[auctionId];
-        require(auctionState.isLockBid, "Vanilla: not lock bid");
-        require(block.number >= auctionState.endBlock, "Vanilla: not over");
-        require(!auctionState.highestBidderClaimed, "Vanilla: claimed");
-        auctionState.highestBidderClaimed = true;
-
-        address nftReceiver = auctionState.highestBidder == address(0)
-            ? auctionState.beneficiary
-            : auctionState.highestBidder;
-
-        IERC721(auctionState.nft).safeTransferFrom(
-            address(this),
-            nftReceiver,
-            auctionState.tokenId
-        );
-
-        emit Claimed(
-            auctionId,
-            auctionState.nft,
-            auctionState.tokenId,
-            nftReceiver
         );
     }
 

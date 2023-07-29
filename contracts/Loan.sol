@@ -283,7 +283,11 @@ contract Loan is ReentrancyGuard, IERC721Receiver {
 
         accountBorrowStates[borrower].principal = safe112(borrowBalance - amount);
         accountBorrowStates[borrower].interestIndex = safe144(borrowIndex);
-        totalBorrows -= amount;
+        if(totalBorrows < amount) {
+            totalBorrows = 0;
+        } else {
+            totalBorrows -= amount;
+        }
 
         emit Repay(payer, borrower, amount);
         return amount;

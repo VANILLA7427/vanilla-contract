@@ -39,7 +39,6 @@ contract Reinforcer is VRFV2WrapperConsumerBase, ReentrancyGuard, IERC721Receive
     mapping(uint => NftState) public requestIdToNftStates;
 
     event CanReinforce(bool canReinforce);
-    event NewReinforceLinkFee(uint newReinforceLinkFee);
     event NewReinforceRequest(
         address indexed nft,
         uint indexed tokenId,

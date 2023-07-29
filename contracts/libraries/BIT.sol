@@ -67,9 +67,4 @@ contract BIT {
         require(n < 2**128, "Vanilla: 128");
         return uint128(n);
     }
-
-    function safe16(uint n) internal pure returns (uint16) {
-        require(n < 2**16, "Vanilla: 16");
-        return uint16(n);
-    }
 }
