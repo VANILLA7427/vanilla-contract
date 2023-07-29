@@ -219,9 +219,11 @@ contract Distributor is ReentrancyGuard {
 
         uint rewardPerPool = rewardSince(poolState.lastUpdatedBlock)
             * poolState.rewardWeight
-            / totalRewardWeight;
+            * 1e18
+            / totalRewardWeight
+            / poolState.totalDeposit;
 
-        poolState.rewardRate += safe144(rewardPerPool * 1e18 / poolState.totalDeposit);
+        poolState.rewardRate += safe144(rewardPerPool);
         poolState.lastUpdatedBlock = uint32(currentBlock);
     }
 
