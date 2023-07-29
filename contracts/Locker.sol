@@ -141,7 +141,7 @@ contract Locker is ReentrancyGuard, BIT {
         uint16 beforeUnlockStage = blockNumberToStage(beforeUnlockBlock);
         uint16 afterUnlockStage = blockNumberToStage(afterUnlockBlock);
 
-        require(beforeUnlockBlock < afterUnlockBlock, "Vanilla: period");
+        require(beforeUnlockStage < afterUnlockStage, "Vanilla: period");
         require(
             (beforeUnlockStage > currentStage + 1) && beforeUnlockStage < 1000,
             "Vanilla: before period"
