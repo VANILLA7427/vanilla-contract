@@ -93,7 +93,7 @@ contract Locker is ReentrancyGuard, BIT {
     ) external nonReentrant returns (uint) {
         uint16 currentStage = blockNumberToStage(block.number);
         uint16 unlockStage = blockNumberToStage(unlockBlock);
-        require(unlockStage > currentStage + 1 && unlockStage < 1000, "Vanilla: period");
+        require(unlockStage > currentStage + 1 && unlockStage < MAX_STAGE, "Vanilla: period");
         require(amount > 0, "Vanilla: amount");
         require(account != address(0), "Vanilla: zero address");
 
@@ -117,6 +117,7 @@ contract Locker is ReentrancyGuard, BIT {
         AccountState storage accountState = accountStates[msg.sender];
         uint lastUnlockStage = accountState.lastUnlockStage;
         uint16 currentStage = blockNumberToStage(block.number);
+        if(currentStage > MAX_STAGE - 1) currentStage = MAX_STAGE - 1;
 
         (, uint unlockAmount) = query(msg.sender, lastUnlockStage, currentStage);
 
@@ -143,11 +144,11 @@ contract Locker is ReentrancyGuard, BIT {
 
         require(beforeUnlockStage < afterUnlockStage, "Vanilla: period");
         require(
-            (beforeUnlockStage > currentStage + 1) && beforeUnlockStage < 1000,
+            (beforeUnlockStage > currentStage + 1) && beforeUnlockStage < MAX_STAGE,
             "Vanilla: before period"
         );
         require(
-            (afterUnlockStage > currentStage + 1) && afterUnlockStage < 1000,
+            (afterUnlockStage > currentStage + 1) && afterUnlockStage < MAX_STAGE,
             "Vanilla: after period"
         );
         claimReward(msg.sender);
@@ -197,8 +198,8 @@ contract Locker is ReentrancyGuard, BIT {
 
     function getWeight(address account) public view returns (uint) {
         uint16 currentStage = blockNumberToStage(block.number);
-        if(currentStage > 999) return 0;
-        (uint weightSum, uint lockedAmount) = query(account, currentStage, 999);
+        if(currentStage > MAX_STAGE - 1) return 0;
+        (uint weightSum, uint lockedAmount) = query(account, currentStage, MAX_STAGE - 1);
 
         uint weightToSub = lockedAmount * currentStage;
 

@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 
 contract BIT {
+    uint16 public constant MAX_STAGE = 1000;
+
     struct WeightState {
         uint128 weightSum;
         uint128 lockedAmount;
@@ -33,7 +35,7 @@ contract BIT {
     function add(address account, uint128 unlockStage, uint128 amount) internal {
         uint128 weightSum = amount * unlockStage;
         int i = int128(unlockStage);
-        while(i<1000) {
+        while(i<MAX_STAGE) {
             WeightState storage accountWeightState = weightStates[account][uint(i)];
             accountWeightState.weightSum += weightSum;
             accountWeightState.lockedAmount += amount;
@@ -47,7 +49,7 @@ contract BIT {
     function remove(address account, uint128 unlockStage, uint128 amount) internal {
         uint128 weightSum = amount * unlockStage;
         int i = int128(unlockStage);
-        while(i<1000) {
+        while(i<MAX_STAGE) {
             WeightState storage accountWeightState = weightStates[account][uint(i)];
             accountWeightState.weightSum -= weightSum;
             accountWeightState.lockedAmount -= amount;
