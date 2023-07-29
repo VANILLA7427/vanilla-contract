@@ -38,7 +38,7 @@ contract Distributor is ReentrancyGuard {
     event NewTokenPerBlock(uint tokenPerBlock);
     event NewRewardPool(
         uint indexed poolIdx,
-        address rewardPool,
+        address depositToken,
         uint rewardWeight
     );
     event NewRewardWeight(
@@ -125,7 +125,7 @@ contract Distributor is ReentrancyGuard {
         emit NewRewardWeight(poolIdx, rewardWeight);
     }
 
-    function rewardPerPeriod(uint lastUpdatedBlock) public view returns (uint) {
+    function rewardSince(uint lastUpdatedBlock) public view returns (uint) {
         lastUpdatedBlock = lastUpdatedBlock < startBlock ? startBlock : lastUpdatedBlock;
         if(block.number < lastUpdatedBlock) return 0;
         return (block.number - lastUpdatedBlock) * tokenPerBlock;
@@ -137,7 +137,7 @@ contract Distributor is ReentrancyGuard {
 
         uint rewardRate = poolState.rewardRate;
         if (block.number > poolState.lastUpdatedBlock && poolState.totalDeposit != 0) {
-            rewardRate += rewardPerPeriod(poolState.lastUpdatedBlock)
+            rewardRate += rewardSince(poolState.lastUpdatedBlock)
                 * poolState.rewardWeight
                 * 1e18
                 / totalRewardWeight
@@ -217,7 +217,7 @@ contract Distributor is ReentrancyGuard {
             return;
         }
 
-        uint rewardPerPool = rewardPerPeriod(poolState.lastUpdatedBlock)
+        uint rewardPerPool = rewardSince(poolState.lastUpdatedBlock)
             * poolState.rewardWeight
             / totalRewardWeight;
 
