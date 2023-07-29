@@ -51,6 +51,7 @@ contract Locker is ReentrancyGuard, BIT {
     ) {
         require(newVanilla != address(0), "Vanilla: zero address");
         require(newBlockPeriod > 0, "Vanilla: wrong block period");
+        require(newBoostDivider > 0, "Vanilla: zero divider");
         vanilla = IVanilla(newVanilla);
         blockPeriod = newBlockPeriod;
 
@@ -76,6 +77,7 @@ contract Locker is ReentrancyGuard, BIT {
 
     function setBoostDivider(uint newBoostDivider) external {
         require(msg.sender == vanilla.admin(), "Vanilla: admin");
+        require(newBoostDivider > 0, "Vanilla: zero divider");
         boostDivider = newBoostDivider;
         emit NewBoostDivider(boostDivider);
     }
