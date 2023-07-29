@@ -194,7 +194,8 @@ contract Distributor is ReentrancyGuard {
 
         if(poolState.depositToken == weth) {
             IWETH(weth).withdraw(amount);
-            payable(msg.sender).transfer(amount);
+            (bool success, ) = payable(msg.sender).call{value: amount}("");
+            require(success, "Vanilla: unable to send value");
         } else {
             IERC20(poolState.depositToken).safeTransfer(msg.sender, amount);
         }
