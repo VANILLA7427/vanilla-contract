@@ -26,7 +26,7 @@ contract Locker is ReentrancyGuard, BIT {
     uint public boostDivider;
     uint public boostMultiplier;
     uint public startBlock;
-    uint public passedStage;
+    uint16 public passedStage;
 
     IVanilla public vanilla;
 
@@ -66,7 +66,7 @@ contract Locker is ReentrancyGuard, BIT {
         require(msg.sender == vanilla.admin(), "Vanilla: admin");
         require(newBlockPeriod > 0, "Vanilla: wrong block period");
 
-        uint currentStage = blockNumberToStage(block.number);
+        uint16 currentStage = blockNumberToStage(uint32(block.number));
         startBlock = block.number;
         passedStage = currentStage;
 
@@ -90,10 +90,10 @@ contract Locker is ReentrancyGuard, BIT {
 
     function lock(
         address account,
-        uint unlockBlock,
+        uint32 unlockBlock,
         uint112 amount
     ) external nonReentrant returns (uint) {
-        uint16 currentStage = blockNumberToStage(block.number);
+        uint16 currentStage = blockNumberToStage(uint32(block.number));
         uint16 unlockStage = blockNumberToStage(unlockBlock);
         require(unlockStage > currentStage + 1 && unlockStage < MAX_STAGE, "Vanilla: period");
         require(amount > 0, "Vanilla: amount");
@@ -118,7 +118,7 @@ contract Locker is ReentrancyGuard, BIT {
 
         AccountState storage accountState = accountStates[msg.sender];
         uint lastUnlockStage = accountState.lastUnlockStage;
-        uint16 currentStage = blockNumberToStage(block.number);
+        uint16 currentStage = blockNumberToStage(uint32(block.number));
         if(currentStage > MAX_STAGE - 1) currentStage = MAX_STAGE - 1;
 
         (, uint unlockAmount) = query(msg.sender, lastUnlockStage, currentStage);
@@ -137,10 +137,10 @@ contract Locker is ReentrancyGuard, BIT {
 
     function increaseLockPeriod(
         uint112 amount,
-        uint beforeUnlockBlock,
-        uint afterUnlockBlock
+        uint32 beforeUnlockBlock,
+        uint32 afterUnlockBlock
     ) external nonReentrant {
-        uint16 currentStage = blockNumberToStage(block.number);
+        uint16 currentStage = blockNumberToStage(uint32(block.number));
         uint16 beforeUnlockStage = blockNumberToStage(beforeUnlockBlock);
         uint16 afterUnlockStage = blockNumberToStage(afterUnlockBlock);
 
@@ -199,7 +199,7 @@ contract Locker is ReentrancyGuard, BIT {
     }
 
     function getWeight(address account) public view returns (uint) {
-        uint16 currentStage = blockNumberToStage(block.number);
+        uint16 currentStage = blockNumberToStage(uint32(block.number));
         if(currentStage > MAX_STAGE - 1) return 0;
         (uint weightSum, uint lockedAmount) = query(account, currentStage, MAX_STAGE - 1);
 
@@ -231,7 +231,7 @@ contract Locker is ReentrancyGuard, BIT {
 
     function getUnlockAmount(
         address account,
-        uint blockNumber
+        uint32 blockNumber
     ) external view returns (uint) {
         if(accountStates[account].lastUnlockStage > blockNumberToStage(blockNumber)) {
             return 0;
@@ -259,9 +259,9 @@ contract Locker is ReentrancyGuard, BIT {
             - accountState.rewardDebt;
     }
 
-    function blockNumberToStage(uint blockNumber) public view returns (uint16) {
-        return blockNumber < startBlock
-            ? uint16(passedStage)
-            : uint16((blockNumber - startBlock) / blockPeriod + passedStage);
+    function blockNumberToStage(uint32 blockNumber) public view returns (uint16) {
+        if(blockNumber < startBlock) return uint16(passedStage);
+        uint stage = (blockNumber - startBlock) / blockPeriod + passedStage;
+        return stage > 2**16-1 ? 2**16-1 : uint16(stage);
     }
 }

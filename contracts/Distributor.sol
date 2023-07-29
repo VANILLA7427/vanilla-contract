@@ -65,7 +65,7 @@ contract Distributor is ReentrancyGuard {
     constructor (
         address newVanilla,
         address wethAddress,
-        uint newStartBlock,
+        uint32 newStartBlock,
         uint newTokenPerBlock
     ) {
         require(
