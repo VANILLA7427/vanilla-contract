@@ -32,6 +32,7 @@ contract Ticket is ReentrancyGuard, IERC721Receiver {
 
     function setPendingTokenIds(uint tokenId) external {
         require(msg.sender == vanilla.vanilla721(), "Vanilla: 721");
+        require(!pendingTokenIds[tokenId], "Vanilla: pending id");
         pendingTokenIds[tokenId] = true;
     }
 

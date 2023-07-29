@@ -27,7 +27,6 @@ contract Vanilla721 is ERC721Enumerable {
         require(vanilla.minters(msg.sender), "Vanilla: minter");
         ITicket ticket = ITicket(vanilla.ticket());
         if(msg.sender != address(ticket)) {
-            require(!ticket.pendingTokenIds(tokenId), "Vanilla: pending id");
             ticket.setPendingTokenIds(tokenId);
         }
         _safeMint(account, tokenId);
