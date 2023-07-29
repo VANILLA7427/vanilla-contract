@@ -11,7 +11,7 @@ contract Admin {
         uint numConfirmations;
     }
 
-    uint public numConfirmationsRequired;
+    uint public immutable numConfirmationsRequired;
     address[] public admins;
     Transaction[] public transactions;
     mapping(address => bool) public isAdmin;

@@ -23,10 +23,10 @@ contract Distributor is ReentrancyGuard {
         uint112 totalDeposit;
     }
 
-    address public weth;
+    address public immutable weth;
     IVanilla public vanilla;
 
-    uint public startBlock;
+    uint public immutable startBlock;
     uint public totalRewardWeight;
 
     uint public tokenPerBlock;

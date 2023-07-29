@@ -9,7 +9,7 @@ contract RandomTable {
     uint[] public points;
     uint[] public maxRewardWeights;
     uint[] public minRewardWeights;
-    uint public maxNumber;
+    uint public immutable maxNumber;
     uint public divider;
     uint public reinforceVanillaFee;
 

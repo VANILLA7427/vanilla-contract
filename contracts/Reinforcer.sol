@@ -26,11 +26,11 @@ contract Reinforcer is VRFV2WrapperConsumerBase, ReentrancyGuard, IERC721Receive
         uint tokenId;
     }
 
-    uint32 public callbackGasLimit;
-    uint16 public requestConfirmations;
-    uint32 public numWords;
-    address public wrapperAddress;
-    address public link;
+    uint32 public immutable callbackGasLimit;
+    uint16 public immutable requestConfirmations;
+    uint32 public immutable numWords;
+    address public immutable wrapperAddress;
+    address public immutable link;
     bool public canReinforce;
 
     IVanilla public vanilla;
